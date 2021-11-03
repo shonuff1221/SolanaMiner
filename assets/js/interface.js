@@ -1,4 +1,4 @@
-var minersAddr = '0x68C1cb2b49e662691E21c5e43072498EC395f8B6';
+var minersAddr = '0x3602fdFFE4Eb296FDBb8105796651EAbE3D66996';
 var tokenAddr = '0x570a5d26f7765ecb712c0924e4de545b89fd43df';
 var minersAbi =
 [
@@ -607,7 +607,7 @@ var tokenContract;
 var canSell = true;
 var canHatch = true;
 
-function approveBUSD(trx) {
+function approveUSDT(trx) {
 	  tokenContract.methods.approve(minersAddr, trx).send({ from: currentAddr });
 }
 
@@ -645,7 +645,7 @@ function buyEggs(ref, trx, callback){
 		alert("You don't have " + trx + " SOL in your wallet");
 	}
 	else if(+trx > +spend) {
-		alert("Approve spending " + "SOL" + " first");
+		alert("Approve spending " + trx + " SOL first");
 	} else {
 			minersContract.methods.buyEggs(ref, web3.utils.toWei(trx)).send({ from:currentAddr }).then(result => {
         callback();
@@ -762,7 +762,7 @@ function getMyEggs(callback){
 function getMyMiners(callback){
     minersContract.methods.getMyMiners().call({from:currentAddr}).then(result => {
         if (result == '0x') {
-            result = parseFloat(result);
+            result = 0;
         }
         callback(result);
     }).catch((err) => {
@@ -785,3 +785,20 @@ function marketEggs(callback){
         console.log(err)
     });
 }
+
+	
+function tokenPrice(callback) {	
+	const query = "https://api.coingecko.com/api/v3/simple/price?ids=panUSDTswap-token&vs_currencies=usd";	
+	  httpGetAsync(query,callback);	
+  }	
+  function httpGetAsync(theUrl, callback)	
+  {	
+	  var xmlHttp = new XMLHttpRequest();	
+	  xmlHttp.onreadystatechange = function() {	
+		  if (xmlHttp.readyState == 4 && xmlHttp.status == 200)	
+			  callback(xmlHttp.responseText);	
+	  }	
+	  xmlHttp.open("GET", theUrl, true);	
+	  xmlHttp.send(null);	
+  }
+

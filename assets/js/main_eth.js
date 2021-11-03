@@ -4,13 +4,15 @@ var lastNumEggs=-1
 var lastNumMiners=-1
 var lastSecondsUntilFull=100
 lastHatchTime=0
-var eggstohatch1=2592000
+var eggstohatch1=1728000
 var lastUpdate=new Date().getTime()
 var modalID=0
 var baseNum = '';
 var currentAddr = '';
 var spend;
 var usrBal;
+var price = 0;
+var balance = 0;
 
 window.addEventListener('load', async function() {
     if (window.ethereum) {
@@ -43,27 +45,17 @@ window.addEventListener('load', async function() {
       },1000);
     }
 
-    var prldoc=document.getElementById('playerreflink')
-    prldoc.textContent=window.location.origin+"?ref="+currentAddr
-    var copyText = document.getElementById("playerreflink");
-    copyText.value=prldoc.textContent
-    
+    var ref1 = document.getElementById('ref-link');
+    var key = CryptoJS.enc.Hex.parse('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f');
+    var encr = CryptoJS.AES.encrypt(currentAddr, key, { mode: CryptoJS.mode.ECB });
+    //var decr = CryptoJS.AES.decrypt(encr.toString(), key, { mode: CryptoJS.mode.ECB }).toString(CryptoJS.enc.Utf8);
+    ref1.textContent=window.location.origin+"/index.html?ref=" + "XX" + encr.toString();
 })
 
 function approve() {
     var trxspenddoc=document.getElementById('spend-allowance')
-    approveBUSD(web3.utils.toWei(trxspenddoc.value));
+    approveUSDT(web3.utils.toWei(trxspenddoc.value));
 }
-function copyToClipboard(element) {
-    var $temp = $("<input>");
-    $("body").append($temp);
-    $temp.val($(element).text()).select();
-    document.execCommand("copy");
-    $temp.remove();
-    
-    alert("Copied:\n"+ window.location.origin+"?ref="+currentAddr);
-  }
-  
 
 function controlLoop(){
     refreshData()
@@ -98,17 +90,36 @@ function refreshData(){
         console.log("spend limit=" + spend);
     });
 
+    try { tokenPrice(function(result){
+            const jsonData = JSON.parse(result);
+            price = +jsonData["panUSDTswap-token"]["usd"];
+            console.log("panUSDTswap-token=" + price);
+        });
+    }
+    catch { price = 0; }
+
     var balanceElem = document.getElementById('contract-balance');
-    var baseNum = 0;
     contractBalance(function(result){
+        balance = +result;
         rawStr = numberWithCommas(Number(result).toFixed(3));
-        balanceElem.textContent = stripDecimals(rawStr, 3) + ' SOL';
+        const tokenBal = stripDecimals(rawStr, 3) + ' SOL';
+
+
+        if (+price > 0 && +balance > 0) {
+            dollarBal = stripDecimals(numberWithCommas((+price * +balance).toFixed(0)),3);
+            const bal = tokenBal + " ($" + dollarBal + ")";
+            console.log(bal);
+            balanceElem.textContent = bal;
+        } else
+        {
+            balanceElem.textContent = tokenBal;
+        }
     });
 
     var userBalanceElem = document.getElementById('user-balance');
     userBalance(function(result){
-        rawStr = Number(result).toFixed(8);
-        userBalanceElem.textContent = stripDecimals(rawStr,3) + ' SOL';
+        rawStr = numberWithCommas(Number(result).toFixed(3));
+        userBalanceElem.textContent = stripDecimals(rawStr, 3) + ' SOL';
     });
 
     lastHatch(currentAddr,function(lh){
@@ -144,11 +155,11 @@ function refreshData(){
 }
 function updateEggNumber(eggs){
     var hatchminersquantitydoc=document.getElementById('hatchminersquantity')
-    hatchminersquantitydoc.textContent=translateQuantity(eggs)
+    hatchminersquantitydoc.textContent=translateQuantity(eggs,0)
     var allnumeggs=document.getElementsByClassName('num-miners')
     for(var i=0;i<allnumeggs.length;i++){
         if(allnumeggs[i]){
-            allnumeggs[i].textContent=translateQuantity(eggs,12)
+            allnumeggs[i].textContent=translateQuantity(eggs,3)
         }
     }
 }
@@ -201,7 +212,17 @@ function buyEggs2(){
 
     console.log("REF:" + ref);
 
- 
+    if(ref)
+    {
+       if (ref.substring(0, 2) == "XX") {
+          ref = ref.substring(2);
+          console.log(ref);
+          var key = CryptoJS.enc.Hex.parse('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f');
+          ref = CryptoJS.AES.decrypt(ref.toString(), key, { mode: CryptoJS.mode.ECB }).toString(CryptoJS.enc.Utf8);
+          console.log(ref);
+       }
+
+    }
 
     if (!web3.utils.isAddress(ref)){
         ref=currentAddr
@@ -568,7 +589,7 @@ function displayModalMessage(message){
     setTimeout(removeModal,3000)
 }
 function formatTrxValue(trxstr){
-    return parseFloat(parseFloat(trxstr).toFixed(9));
+    return parseFloat(parseFloat(trxstr).toFixed(4));
 }
 function getQueryVariable(variable)
 {
