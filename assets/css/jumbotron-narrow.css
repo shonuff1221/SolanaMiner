@@ -2,6 +2,11 @@
 body {
   padding-top: 20px;
   padding-bottom: 20px;
+  background: linear-gradient( rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4) ), url(../../images/sol-back.jpg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
